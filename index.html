@@ -1647,7 +1647,7 @@ function delVendor(id){const v=D.vendors.find(x=>x.id==id),n=D.titles.filter(t=>
 const SITES=['DumpsMasters','ITExamDumps','Prep2Certs'];const SITE_DOM={DumpsMasters:'https://dumpsmasters.com',ITExamDumps:'https://itexamdumps.com',Prep2Certs:'https://prep2certs.com'};
 const VARS='EXAM_CODE EXAM_NAME EXAM_SHORT_NAME EXAM_VERSION VENDOR NEW_CERT_NAME NEW_CERT_NAME_LONG NEW_CERT_NAME_PARENT NEW_CERT_NAME_PARENT_LONG NEW_CERT_NAME_CHILD NEW_CERT_NAME_CHILD_LONG CERT_VERSION TECHNOLOGY TRACK LEVEL CERT_AUDIENCE NUMBER_OF_QUESTIONS EXAM_DURATION EXAM_LANGUAGE EXAM_FORMAT AI_EXAM_QUESTIONS'.split(' ');
 const DEF_LINKS=['INFO_EXAM_LINK','BUNDLE_EXAM_LINK','CERT_LINK','VENDOR_LINK'];
-const linksFor=s=>['[PREP2CERTS_PRODUCT-CATEGORY_VENDOR]','[PREP2CERTS_ALL_VENDORS]','[PREP2CERTS_PRODUCT_VENDOR_LINK_DUMPS]','[~EXAMSKIT_EXAM_LINK_QUESTIONS~]','[~EXAMSKIT_BUNDLE_EXAM_LINK~]','[~EXAMSKIT_VENDOR_DUMPS_LINK~]'];
+const linksFor=s=>['[~PREP2CERTS_PRODUCT-CATEGORY_VENDOR~]','[~PREP2CERTS_ALL_VENDORS~]','[~PREP2CERTS_PRODUCT_VENDOR_LINK_DUMPS~]','[~EXAMSKIT_EXAM_LINK_QUESTIONS~]','[~EXAMSKIT_BUNDLE_EXAM_LINK~]','[~EXAMSKIT_VENDOR_DUMPS_LINK~]'];
 const TITLE_VARS=['[TITLE] Exam','[TITLE] Practice Test','Pass [TITLE] Exam In First Attempt','[TITLE] Exam Dumps','[TITLE] Questions and Answers','Updated [TITLE] PDF Questions','[TITLE] Study Guide 2026'];
 const CERT_TITLE_VARS=['[TITLE] Certification','[TITLE] Certification Exams','How to Earn [TITLE] Certification','[TITLE] Certification Path','[TITLE] Practice Tests Bundle'];
 const BCOL=['#2563eb','#16a34a','#db2777','#ea580c'];
@@ -1684,7 +1684,7 @@ const show=()=>{gres.innerHTML=res.length?`<table><tr><th>Exam Code</th><th>Titl
 gsub.onclick=()=>{const tpl=edGet().trim();if(!edText().trim()){alert('Enter Content with Variables is required.');return}localStorage[st]=tpl;
 const site=gsite.value,codes=gcodes.value.split('\n').map(s=>s.trim()).filter(Boolean),tvs=[...gtv.options].map(o=>o.value);res=[];
 codes.forEach((c,i)=>{const lc=c.toLowerCase(),t=D.titles.find(x=>x.code.toLowerCase()==lc||(cert&&x.cert.toLowerCase()==lc));if(!t)return;const V=vals(t,site,cert);
-let h=tpl.replace(/\[([A-Z_]+)\]/g,(m,k)=>k in V?V[k]:m).replace(/\[~[A-Z0-9_]*LINK[A-Z_]*~\]/g,m=>linkUrl(site,m,t)).replace(/\[PREP2CERTS_[A-Z_-]*\]/g,m=>p2cLink(m,t)||m).replace(/\[~[A-Z0-9]+_BANNER_(\d)~\]/g,(m,n)=>`<img alt="${site} banner ${n}" src="${SITE_DOM[site]||'https://example-site.com'}/banners/${n}.png">`);
+let h=tpl.replace(/\[([A-Z_]+)\]/g,(m,k)=>k in V?V[k]:m).replace(/\[~[A-Z0-9_]*LINK[A-Z_]*~\]/g,m=>linkUrl(site,m,t)).replace(/\[~?PREP2CERTS_[A-Z_-]*~?\]/g,m=>p2cLink(m,t)||m).replace(/\[~[A-Z0-9]+_BANNER_(\d)~\]/g,(m,n)=>`<img alt="${site} banner ${n}" src="${SITE_DOM[site]||'https://example-site.com'}/banners/${n}.png">`);
 const vid=`https://${gvp.value=='Youtube'?'www.youtube.com/embed/':'player.vimeo.com/video/'}${gvt.value.toLowerCase()}-${t.code.toLowerCase()}`;
 h=h.replace(/\[PLACE_VIDEO_HERE\]/g,`<div class="video"><iframe width="560" height="315" src="${vid}" title="${gvt.value} video: ${t.code}"></iframe></div>`);
 const ttl=tvs[i%tvs.length].replace('[TITLE]',cert?t.cert:t.code+' '+t.name);res.push({code:cert?t.cert:t.code,id:t.id,title:ttl,html:h,tags:[...t.tags,site||'All Sites'].filter(Boolean)})});
