@@ -1644,10 +1644,10 @@ R.vendors=()=>{$('#page').innerHTML=`<div class="card">${S}<button class="btn g"
 function editVendor(id){const v=D.vendors.find(x=>x.id==id)||{};const old=v.name;form(id?'Edit Vendor':'Add Vendor',[{k:'name',l:'Name'},{k:'website',l:'Website'}],v,o=>{if(id){Object.assign(v,o);D.titles.forEach(t=>{if(t.vendor==old)t.vendor=o.name})}else D.vendors.push({id:nid(D.vendors),...o});R.vendors()})}
 function delVendor(id){const v=D.vendors.find(x=>x.id==id),n=D.titles.filter(t=>t.vendor==v.name).length;if(n&&!confirm(`${v.name} has ${n} titles. Delete vendor anyway?`))return;D.vendors=D.vendors.filter(x=>x.id!=id);save();R.vendors()}
 // ===== Generate Content (per spec) =====
-const SITES=['DumpsMasters','ITExamDumps','Prep2Certs'];const SITE_DOM={DumpsMasters:'https://dumpsmasters.com',ITExamDumps:'https://itexamdumps.com',Prep2Certs:'https://prep2certs.com'};
+const SITES=['DumpsMasters','ITExamDumps','Prep2Certs','PremiumDumps'];const SITE_DOM={DumpsMasters:'https://dumpsmasters.com',ITExamDumps:'https://itexamdumps.com',Prep2Certs:'https://prep2certs.com',PremiumDumps:'https://premiumdumps.com'};
 const VARS='EXAM_CODE EXAM_NAME EXAM_SHORT_NAME EXAM_VERSION VENDOR NEW_CERT_NAME NEW_CERT_NAME_LONG NEW_CERT_NAME_PARENT NEW_CERT_NAME_PARENT_LONG NEW_CERT_NAME_CHILD NEW_CERT_NAME_CHILD_LONG CERT_VERSION TECHNOLOGY TRACK LEVEL CERT_AUDIENCE NUMBER_OF_QUESTIONS EXAM_DURATION EXAM_LANGUAGE EXAM_FORMAT AI_EXAM_QUESTIONS'.split(' ');
-const DEF_LINKS=['INFO_EXAM_LINK','BUNDLE_EXAM_LINK','CERT_LINK','VENDOR_LINK'];
-const linksFor=s=>['[~PREP2CERTS_PRODUCT-CATEGORY_VENDOR~]','[~PREP2CERTS_ALL_VENDORS~]','[~PREP2CERTS_PRODUCT_VENDOR_LINK_DUMPS~]','[~EXAMSKIT_EXAM_LINK_QUESTIONS~]','[~EXAMSKIT_BUNDLE_EXAM_LINK~]','[~EXAMSKIT_VENDOR_DUMPS_LINK~]'];
+const DEF_LINKS=['INFO_EXAM_LINK','BUNDLE_EXAM_LINK','CERT_LINK','VENDOR_LINK','PRODUCT-CATEGORY_VENDOR','PRODUCT_VENDOR_LINK_DUMPS','PRODUCT_VENDOR_LINK_QUESTIONS'];
+const linksFor=s=>{const p=s?s.toUpperCase()+'_':'_';return DEF_LINKS.map(l=>`[~${p}${l}~]`)};
 const TITLE_VARS=['[TITLE] Exam','[TITLE] Practice Test','Pass [TITLE] Exam In First Attempt','[TITLE] Exam Dumps','[TITLE] Questions and Answers','Updated [TITLE] PDF Questions','[TITLE] Study Guide 2026'];
 const CERT_TITLE_VARS=['[TITLE] Certification','[TITLE] Certification Exams','How to Earn [TITLE] Certification','[TITLE] Certification Path','[TITLE] Practice Tests Bundle'];
 const BCOL=['#2563eb','#16a34a','#db2777','#ea580c'];
@@ -1662,7 +1662,7 @@ const p2cVendor=t=>{const k=String(t.vendor).toLowerCase().replace(/[^a-z0-9]/g,
 // Real Prep2Certs URL for a shortcode; returns null when no real page exists (shortcode is then left unreplaced)
 function p2cLink(sc,t){const L=sc.toUpperCase();if(/ALL_VENDORS/.test(L))return P2C_ALL_VENDORS;if(/BUNDLE|CERT_LINK/.test(L))return null;if(/CATEGORY|VENDOR/.test(L)&&!/LINK_DUMPS|PRODUCT_VENDOR_LINK/.test(L))return p2cVendor(t);return p2cProduct(t)}
 function linkUrl(site,sc,t){if(site=='Prep2Certs'){const u=p2cLink(sc,t);return u||sc}const base=SITE_DOM[site]||'https://example-site.com',L=sc.replace(/^\[~_?|~\]$/g,'').replace((site||'').toUpperCase()+'_',''),slug=t.code.toLowerCase(),v=t.vendor.toLowerCase().replace(/\W+/g,'-');
-const path=/BUNDLE/.test(L)?`bundle/${slug}`:/CERT_LINK/.test(L)?`certification/${t.cert.toLowerCase().replace(/\W+/g,'-')}`:/VENDOR/.test(L)?`vendor/${v}`:`exam/${slug}`;return `${base}/${path}`}
+if(/ALL_VENDORS/.test(L))return `${base}/all-vendors/`;if(/PRODUCT-CATEGORY_VENDOR/.test(L)||(/CATEGORY/.test(L)&&/VENDOR/.test(L)&&!/LINK/.test(L)))return `${base}/product-category/${v}/`;if(/PRODUCT_VENDOR_LINK|LINK_DUMPS|LINK_QUESTIONS/.test(L))return `${base}/exam/${slug}`;const path=/BUNDLE/.test(L)?`bundle/${slug}`:/CERT_LINK/.test(L)?`certification/${t.cert.toLowerCase().replace(/\W+/g,'-')}`:/VENDOR/.test(L)?`vendor/${v}`:`exam/${slug}`;return `${base}/${path}`}
 function genPage(cert){const st=cert?'gc_c_v2':'gc_e_v2';
 $('#page').innerHTML=`<div class="card">${S}<div class="row" style="align-items:center"><label style="flex:0 0 100px">Select Site</label><select id="gsite"><option value="">-- Select Site --</option>${SITES.map(s=>`<option>${s}</option>`).join('')}</select></div>
 <div class="info"><h4>Variables List</h4><div class="chips">${VARS.map(v=>`<span class="chip" onclick="ins('[${v}]')">[${v}]</span>`).join('')}</div>
@@ -1678,13 +1678,13 @@ window.ED_KEY=st;initEd();let res=[];
 const upd=()=>{const s=gsite.value;glinks.innerHTML=linksFor(s).map(l=>`<span class="chip" onclick="ins('${l}')">${l}</span>`).join('');
 renderBan(s);
 // remap site-agnostic link shortcodes in editor
-if(s){const S=s.toUpperCase();edSet(edGet().replace(/\[~_?([A-Z0-9]+_)?([A-Z_]*LINK[A-Z_]*)~\]/g,(m,p,l)=>{if(p=='EXAMSKIT_')return m;const known=SITES.map(x=>x.toUpperCase()+'_');if(p&&!known.includes(p))l=p+l;return `[~${S}_${l}~]`}))}};
+if(s){const S=s.toUpperCase();edSet(edGet().replace(/\[~_?([A-Z0-9]+_)?([A-Z0-9_-]*?(?:LINK[A-Z0-9_-]*|PRODUCT-CATEGORY_VENDOR|ALL_VENDORS))~\]/g,(m,p,l)=>{if(p=='EXAMSKIT_')return m;const known=SITES.map(x=>x.toUpperCase()+'_');if(p&&!known.includes(p))l=p+l;return `[~${S}_${l}~]`}))}};
 gsite.onchange=upd;upd();
 const show=()=>{gres.innerHTML=res.length?`<table><tr><th>Exam Code</th><th>Title</th><th>Html Content</th><th>Content</th><th>Tags</th></tr>${res.map(r=>`<tr><td><b>${esc(r.code)}</b></td><td>${esc(r.title)}</td><td><textarea rows="6" readonly style="font-family:monospace;font-size:11px;min-width:220px">${esc(r.html)}</textarea></td><td><div style="max-height:200px;overflow:auto;min-width:260px">${r.html}</div></td><td>${r.tags.map(x=>`<span class="badge">${esc(x)}</span>`).join(' ')}</td></tr>`).join('')}</table>`:'<div class="alert">No record found.</div>'};show();
 gsub.onclick=()=>{const tpl=edGet().trim();if(!edText().trim()){alert('Enter Content with Variables is required.');return}localStorage[st]=tpl;
 const site=gsite.value,codes=gcodes.value.split('\n').map(s=>s.trim()).filter(Boolean),tvs=[...gtv.options].map(o=>o.value);res=[];
 codes.forEach((c,i)=>{const lc=c.toLowerCase(),t=D.titles.find(x=>x.code.toLowerCase()==lc||(cert&&x.cert.toLowerCase()==lc));if(!t)return;const V=vals(t,site,cert);
-let h=tpl.replace(/\[([A-Z_]+)\]/g,(m,k)=>k in V?V[k]:m).replace(/\[~[A-Z0-9_]*LINK[A-Z_]*~\]/g,m=>linkUrl(site,m,t)).replace(/\[~?PREP2CERTS_[A-Z_-]*~?\]/g,m=>p2cLink(m,t)||m).replace(/\[~[A-Z0-9]+_BANNER_(\d)~\]/g,(m,n)=>`<img alt="${site} banner ${n}" src="${SITE_DOM[site]||'https://example-site.com'}/banners/${n}.png">`);
+let h=tpl.replace(/\[([A-Z_]+)\]/g,(m,k)=>k in V?V[k]:m).replace(/\[~[A-Z0-9_-]*(?:LINK[A-Z0-9_-]*|PRODUCT-CATEGORY_VENDOR|ALL_VENDORS|PRODUCT_VENDOR_LINK_DUMPS|PRODUCT_VENDOR_LINK_QUESTIONS)~\]/g,m=>linkUrl(site,m,t)).replace(/\[~?PREP2CERTS_[A-Z_-]*~?\]/g,m=>p2cLink(m,t)||m).replace(/\[~[A-Z0-9]+_BANNER_(\d)~\]/g,(m,n)=>`<img alt="${site} banner ${n}" src="${SITE_DOM[site]||'https://example-site.com'}/banners/${n}.png">`);
 const vid=`https://${gvp.value=='Youtube'?'www.youtube.com/embed/':'player.vimeo.com/video/'}${gvt.value.toLowerCase()}-${t.code.toLowerCase()}`;
 h=h.replace(/\[PLACE_VIDEO_HERE\]/g,`<div class="video"><iframe width="560" height="315" src="${vid}" title="${gvt.value} video: ${t.code}"></iframe></div>`);
 const ttl=tvs[i%tvs.length].replace('[TITLE]',cert?t.cert:t.code+' '+t.name);res.push({code:cert?t.cert:t.code,id:t.id,title:ttl,html:h,tags:[...t.tags,site||'All Sites'].filter(Boolean)})});
